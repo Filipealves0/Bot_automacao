@@ -1,0 +1,3 @@
+instagrapi
+twilio
+python-dotenv
