@@ -1,0 +1,63 @@
+import time
+import os
+from instagrapi import Client
+from twilio.rest import Client as TwilioClient
+from dotenv import load_dotenv
+load_dotenv()
+
+
+
+# -------- CONFIGURAÇÕES --------
+USERNAME = os.getenv("INSTA_USERNAME")
+PASSWORD = os.getenv("INSTA_PASSWORD")
+
+
+# Twilio
+TWILIO_SID = os.getenv("TWILIO_SID")
+TWILIO_TOKEN = os.getenv("TWILIO_TOKEN")
+TWILIO_FROM = os.getenv("TWILIO_FROM")
+TWILIO_TO = os.getenv("TWILIO_TO")
+
+
+# Caminho das imagens
+IMAGE_FOLDER = "images"
+
+# -------- FUNÇÃO PARA ENVIAR LOG --------
+def enviar_whatsapp_log(mensagem):
+    try:
+        client = TwilioClient(TWILIO_SID, TWILIO_TOKEN)
+        message = client.messages.create(
+            body=mensagem,
+            from_=TWILIO_FROM,
+            to=TWILIO_TO
+        )
+        print("📲 Log enviado via WhatsApp:", message.sid)
+    except Exception as e:
+        print("❌ Falha ao enviar mensagem via WhatsApp:", e)
+
+# -------- LOGIN NO INSTAGRAM --------
+cl = Client()
+try:
+    cl.login(USERNAME, PASSWORD)
+    enviar_whatsapp_log("✅ Bot do Instagram iniciado com sucesso!")
+except Exception as e:
+    enviar_whatsapp_log(f"❌ Erro ao logar no Instagram: {e}")
+    exit()
+
+# -------- LOOP DE POSTAGEM --------
+image_list = sorted(os.listdir(IMAGE_FOLDER))
+
+while True:
+    for image_name in image_list:
+        image_path = os.path.join(IMAGE_FOLDER, image_name)
+
+        try:
+            cl.photo_upload_to_story(image_path, "Hora Santa! 🙏✨")
+            mensagem = f"✅ Story postado com sucesso: {image_name}"
+            enviar_whatsapp_log(mensagem)
+        except Exception as e:
+            mensagem = f"❌ Erro ao postar {image_name}: {e}"
+            enviar_whatsapp_log(mensagem)
+        
+        print("⏳ Aguardando 1 hora até o próximo story...")
+        time.sleep(3600)  # Espera 1 hora
